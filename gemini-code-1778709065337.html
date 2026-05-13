@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detailer | Master Showroom</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg: #050505; --card: #111; --accent: #007bff; --text: #ffffff; --border: #222; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+        
+        header { 
+            padding: 20px 5%; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.9); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1000;
+        }
+        .logo { font-size: 24px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase; }
+        .logo span { color: var(--accent); }
+        .nav-btn { background: transparent; border: 1px solid #444; color: #888; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-left: 10px; font-weight: bold; }
+        .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .category-section { padding: 40px 5% 10px 5%; }
+        .section-header { border-left: 4px solid var(--accent); padding-left: 15px; margin-bottom: 20px; }
+        .section-header h2 { margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .horizontal-grid { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 20px; scrollbar-width: thin; min-height: 50px; }
+        .card { 
+            min-width: 300px; cursor: pointer; background: var(--card); border-radius: 12px; 
+            border: 1px solid var(--border); overflow: hidden; transition: 0.3s; position: relative;
+        }
+        .card:hover { border-color: var(--accent); transform: translateY(-5px); }
+        .card-img { width: 100%; height: 180px; background-size: cover; background-position: center; pointer-events: none; }
+        .card-body { padding: 15px; pointer-events: none; }
+        .card-price { color: var(--accent); font-weight: bold; font-size: 18px; }
+
+        .delete-btn {
+            position: absolute; top: 10px; right: 10px; background: #ff4444; color: white; 
+            border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; z-index: 20; display: none;
+        }
+        .card:hover .delete-btn { display: block; }
+
+        .side-panel, .modal {
+            display: none; position: fixed; right: 0; top: 0; width: 350px; height: 100%;
+            background: #111; border-left: 1px solid var(--accent); z-index: 2000; padding: 30px; box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+        }
+        .modal { width: 100%; max-width: 500px; left: 50%; top: 50%; transform: translate(-50%, -50%); height: auto; border: 1px solid var(--accent); border-radius: 15px; right: auto; }
+        
+        input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #333; color: white; border-radius: 6px; }
+        .primary-btn { width: 100%; padding: 15px; background: var(--accent); border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 6px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">DETAIL<span>ER</span></div>
+    <div>
+        <button class="nav-btn" onclick="togglePanel('sharePanel')">Share Website</button>
+        <button class="nav-btn" onclick="checkAdmin()">Admin Access</button>
+    </div>
+</header>
+
+<div id="sections-container">
+    <section class="category-section"><div class="section-header"><h2>Hypercars</h2></div><div class="horizontal-grid" id="Hypercar"></div></section>
+    <section class="category-section"><div class="section-header"><h2>Supercars</h2></div><div class="horizontal-grid" id="Supercar"></div></section>
+    <section class="category-section"><div class="section-header"><h2>Luxury Cars</h2></div><div class="horizontal-grid" id="Luxury Car"></div></section>
+    <section class="category-section"><div class="section-header"><h2>Cars</h2></div><div class="horizontal-grid" id="Car"></div></section>
+    <section class="category-section"><div class="section-header"><h2>Motorcycles</h2></div><div class="horizontal-grid" id="Motorcycle"></div></section>
+    <section class="category-section"><div class="section-header"><h2>E-Bikes</h2></div><div class="horizontal-grid" id="E-Bike"></div></section>
+</div>
+
+<div id="detailsModal" class="modal">
+    <h2 id="mName"></h2>
+    <div id="mImg" style="width:100%; height:220px; background-size:cover; background-position:center; border-radius:10px;"></div>
+    <h3 id="mPrice" style="color:var(--accent); margin-top:15px;"></h3>
+    <p id="mDesc" style="color:#aaa; line-height:1.6;"></p>
+    <button class="primary-btn" onclick="closeModals()">Close</button>
+</div>
+
+<div id="adminPanel" class="side-panel">
+    <h3>Inventory Manager</h3>
+    <input type="text" id="vName" placeholder="Vehicle Name">
+    <input type="text" id="vPrice" placeholder="Price">
+    <select id="vType">
+        <option value="Hypercar">Hypercar</option>
+        <option value="Supercar">Supercar</option>
+        <option value="Luxury Car">Luxury Car</option>
+        <option value="Car">Car</option>
+        <option value="Motorcycle">Motorcycle</option>
+        <option value="E-Bike">E-Bike</option>
+    </select>
+    <input type="text" id="vImg" placeholder="Image URL">
+    <textarea id="vDesc" placeholder="Description & Specs" rows="4"></textarea>
+    <button class="primary-btn" onclick="addVehicle()">Add to Showroom</button>
+    <button class="nav-btn" style="width:100%; margin-top:10px;" onclick="closeModals()">Cancel</button>
+</div>
+
+<div id="sharePanel" class="side-panel">
+    <h3>Backup & Share</h3>
+    <textarea id="shareCode" rows="6" readonly style="font-size:10px;"></textarea>
+    <button class="primary-btn" onclick="copyCode()">Copy Showroom Code</button>
+    <hr style="border:1px solid #222; margin:20px 0;">
+    <textarea id="importCode" placeholder="Paste showroom code here..." rows="3"></textarea>
+    <button class="primary-btn" style="background:#28a745" onclick="importData()">Import Showroom</button>
+    <button class="nav-btn" style="width:100%; margin-top:10px;" onclick="closeModals()">Close</button>
+</div>
+
+<script>
+    const STORAGE_KEY = 'master_showroom_v4';
+
+    function togglePanel(id) {
+        closeModals();
+        document.getElementById(id).style.display = 'block';
+    }
+
+    function closeModals() {
+        document.querySelectorAll('.side-panel, .modal').forEach(p => p.style.display = 'none');
+    }
+
+    function checkAdmin() {
+        if(prompt("Enter Admin PIN:") === "1003") togglePanel('adminPanel');
+        else alert("Access Denied");
+    }
+
+    function addVehicle() {
+        const v = {
+            id: Date.now(),
+            name: document.getElementById('vName').value,
+            price: document.getElementById('vPrice').value,
+            type: document.getElementById('vType').value,
+            img: document.getElementById('vImg').value,
+            desc: document.getElementById('vDesc').value || "No specifications listed."
+        };
+        let data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        data.push(v);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        render();
+        closeModals();
+    }
+
+    function render() {
+        // Recovery logic for old data keys
+        let data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || 
+                   JSON.parse(localStorage.getItem('master_inv')) || 
+                   JSON.parse(localStorage.getItem('myInventory')) || [];
+        
+        // Save to current key to ensure consistency
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+        document.querySelectorAll('.horizontal-grid').forEach(g => g.innerHTML = '');
+        
+        data.forEach(v => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.onclick = () => showDetails(v);
+            card.innerHTML = `
+                <button class="delete-btn" onclick="event.stopPropagation(); deleteV(${v.id})">Delete</button>
+                <div class="card-img" style="background-image:url('${v.img}')"></div>
+                <div class="card-body">
+                    <div style="font-weight:bold;">${v.name}</div>
+                    <div class="card-price">${v.price}</div>
+                </div>
+            `;
+            const grid = document.getElementById(v.type);
+            if(grid) grid.appendChild(card);
+        });
+        document.getElementById('shareCode').value = btoa(JSON.stringify(data));
+    }
+
+    function showDetails(v) {
+        document.getElementById('mName').innerText = v.name;
+        document.getElementById('mPrice').innerText = v.price;
+        document.getElementById('mDesc').innerText = v.desc;
+        document.getElementById('mImg').style.backgroundImage = `url('${v.img}')`;
+        document.getElementById('detailsModal').style.display = 'block';
+    }
+
+    function deleteV(id) {
+        if(!confirm("Are you sure you want to remove this vehicle?")) return;
+        let data = JSON.parse(localStorage.getItem(STORAGE_KEY)).filter(x => x.id !== id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        render();
+    }
+
+    function copyCode() {
+        document.getElementById('shareCode').select();
+        document.execCommand('copy');
+        alert("Showroom Code Copied to Clipboard!");
+    }
+
+    function importData() {
+        try {
+            const code = document.getElementById('importCode').value;
+            localStorage.setItem(STORAGE_KEY, atob(code));
+            render();
+            closeModals();
+        } catch(e) { alert("Invalid Showroom Code"); }
+    }
+
+    window.onload = render;
+</script>
+</body>
+</html>
